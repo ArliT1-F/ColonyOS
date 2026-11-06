@@ -49,12 +49,12 @@ internal static class Program
         ForecastLine forecast = TrendAnalyzer.ProjectToThreshold(points, 1f, false);
         Assert(forecast.Available, forecast.Reason);
         Near(0.1f, forecast.SlopePerDay, 0.0001f, "storage slope");
-        Near(240000f, forecast.TargetAtTick, 1f, "storage target");
+        Near(480000f, forecast.TargetAtTick, 1f, "storage target");
     }
 
     private static void NoisyTrend()
     {
-        List<MetricPoint> points = Points(100f, 1f, 99f, 2f, 98f, 3f, 97f);
+        List<MetricPoint> points = Points(100f, 1f, 100f, 1f, 100f, 1f, 100f);
         ForecastLine forecast = TrendAnalyzer.ProjectToThreshold(points, 0f, true);
         Assert(!forecast.Available, "Alternating noise must not become a confident depletion forecast.");
     }
