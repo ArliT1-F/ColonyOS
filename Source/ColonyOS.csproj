@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>net472;net10.0</TargetFrameworks>
+    <LangVersion>10.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>ColonyOS</AssemblyName>
+    <RootNamespace>ColonyOS</RootNamespace>
+    <Version>0.1.0</Version>
+    <Deterministic>true</Deterministic>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <IntermediateOutputPath>obj/$(Configuration)/$(TargetFramework)/</IntermediateOutputPath>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net472'">
+    <OutputPath>../1.6/Assemblies/</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <OutputPath>../1.7/Assemblies/</OutputPath>
+    <DefineConstants>$(DefineConstants);RW_1_7</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.*" PrivateAssets="all" />
+    <PackageReference Include="Lib.Harmony" Version="2.4.2" PrivateAssets="all" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.7.*-*" PrivateAssets="all" />
+    <PackageReference Include="Lib.Harmony" Version="3.0.0-rc.2" PrivateAssets="all" ExcludeAssets="runtime" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Update="System"><Private>false</Private></Reference>
+    <Reference Update="System.Core"><Private>false</Private></Reference>
+    <Reference Update="System.Xml"><Private>false</Private></Reference>
+  </ItemGroup>
+</Project>
