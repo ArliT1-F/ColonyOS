@@ -48,6 +48,10 @@ Outputs go to `1.6/Assemblies/ColonyOS.dll` (`net472`, Harmony 2) and `1.7/Assem
 
 The repository includes automated dual-target builds, analytical tests, and package checks. **Actual in-game UI, performance, trade interoperability, and save/load testing still requires licensed RimWorld installations.** No in-game screenshot or runtime certification is claimed here. The release checklist is in [`docs/TESTING.md`](docs/TESTING.md), and the framework research decision is in [`docs/RESEARCH.md`](docs/RESEARCH.md).
 
+## Future roadmap
+
+Proposed additions—including production telemetry, prediction backtesting, per-map views, trade planning, accessibility, and a public provider API—are documented in [`docs/ROADMAP.md`](docs/ROADMAP.md). Roadmap entries are proposals, not claims of implemented functionality.
+
 ## License
 
 MIT — see [`LICENSE`](LICENSE). RimWorld and its assemblies are property of Ludeon Studios; they are not bundled.
