@@ -37,12 +37,18 @@ main_def = (ROOT / "Defs/MainButtonDefs/ColonyOS.xml").read_text()
 if "ColonyOS.UI.ColonyOSWindow" not in main_def:
     errors.append("Main button does not reference the dashboard window")
 
+translation_root = ET.parse(ROOT / "Languages/English/Keyed/ColonyOS.xml").getroot()
+translation_keys = {node.tag for node in translation_root}
+used_translation_keys = set()
 for source in (ROOT / "Source").rglob("*.cs"):
     text = source.read_text()
     for match in re.finditer(r'Load\("([A-Za-z]+)"\)', text):
         asset = ROOT / "Textures/ColonyOS/UI" / f"{match.group(1)}.png"
         if not asset.exists():
             errors.append(f"Missing UI asset: {asset.relative_to(ROOT)}")
+    used_translation_keys.update(re.findall(r'"(ColonyOS_[A-Za-z0-9_]+)"\.Translate\(\)', text))
+for key in sorted(used_translation_keys - translation_keys):
+    errors.append(f"Missing English translation key: {key}")
 
 for folder in ("1.6/Assemblies", "1.7/Assemblies"):
     for dll in (ROOT / folder).glob("*.dll"):
@@ -60,4 +66,4 @@ if errors:
         print(f"  - {error}", file=sys.stderr)
     sys.exit(1)
 
-print("PASS: XML, metadata, load folders, assets, and package hygiene")
+print("PASS: XML, metadata, load folders, translations, assets, and package hygiene")

@@ -33,11 +33,11 @@ jobs:
         run: dotnet run --project Tests/ColonyOS.Analytics.Tests.csproj -c Release
       - name: Verify mod package
         run: python3 scripts/verify_mod.py
-      - name: Upload compiled assemblies
+      - name: Package installable mod
+        run: python3 scripts/package_mod.py
+      - name: Upload installable mod
         uses: actions/upload-artifact@v4
         with:
           name: ColonyOS-${{ github.sha }}
-          path: |
-            1.6/Assemblies/ColonyOS.dll
-            1.7/Assemblies/ColonyOS.dll
+          path: dist/ColonyOS.zip
           if-no-files-found: error

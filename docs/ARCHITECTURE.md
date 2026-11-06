@@ -13,7 +13,8 @@ The model, analytics, market-ranking, and forecasting files do not import `Verse
 - Narrow Harmony hooks record bill iterations, trader visits/eligibility, and executed transactions. There are no transpilers.
 - `HistoryStore` uses RimWorld `Scribe` collections and defensive post-load initialization. Adding or removing the mod does not alter vanilla records.
 - `ForecastEngine` recalculates from shared snapshots and events. Predictions have evidence, confidence, timeframe, severity, and a department link.
-- `ColonyOSWindow` is a custom full-window application shell. Rendering has no game-state queries or analytical scans.
+- `DashboardViewModelFactory` runs on scheduled game ticks. It downsamples every time range, precomputes rankings and food/storage projections, caps visible ledger rows without truncating totals, and shares immutable-in-practice results with all pages.
+- `ColonyOSWindow` is a custom full-window application shell. Rendering has no map scans or game-state mutations. Search/sort caches are revision-keyed; compact layouts collapse navigation and stack detail panels.
 
 ## Measurement boundaries
 
@@ -23,12 +24,16 @@ The model, analytics, market-ranking, and forecasting files do not import `Verse
 - Storage pressure uses the same stockpile-cell/free-slot estimate as `Zone_Stockpile`; it is not an exact universal item-capacity calculation and does not include every modded container.
 - Resource amounts come from RimWorld's counted resource readout (eligible storage), not every item anywhere on a map.
 - Food projections require a significant measured downward trend in stored human-edible nutrition. ColonyOS does not assume a universal meals-per-colonist constant.
-- Market eligibility comes from `ITrader.ColonyThingsWillingToBuy` and actual trade session tradeables. Sale prices in history are captured before a successful `TradeDeal` resets.
+- Market eligibility comes from `ITrader.ColonyThingsWillingToBuy` and actual trade session tradeables. The “Cannot” profile view is only the complement among counted resources; uncounted items are not classified. Sale prices in history are captured before a successful `TradeDeal` resets.
 - Forecast rankings are explicitly estimated and require current eligibility and/or transaction history. There are no invented hidden preferences.
+- Dashed food/storage lines are linear extrapolations of measured series. They are labelled estimated and are never inserted into measured chart data. No uncertainty band is drawn because the available model does not justify one.
+- Net trade flow is revenue minus spending, not accounting profit: RimWorld does not provide a universal cost basis for produced or acquired items.
 
 ## Persistence bounds
 
-Defaults retain 120 in-game days and cap samples/events independently. UI charts downsample to a fixed point budget. Changing retention prunes on the next collection/save cycle.
+Defaults retain 120 in-game days and cap samples/events independently: 6,000 snapshots, 6,000 production events, 3,000 transactions, and 1,200 trader visits. Only the newest snapshot retains detailed buildings, resources, skills, and workforce; older snapshots are reduced to scalar metrics before another sample is added and during post-load migration. Trader identities are reused within an active visit instead of being duplicated at each collection.
+
+UI charts downsample to at most 240 points and the visible transaction ledger to 250 rows; aggregate totals still use every transaction in the selected range. Changing retention prunes on the next collection/save cycle. These are hard safety bounds, not a claim that every detailed metric is retained for every historical tick.
 
 ## Version builds
 

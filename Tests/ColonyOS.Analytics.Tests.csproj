@@ -10,6 +10,8 @@
   <ItemGroup>
     <Compile Include="../Source/ColonyOS/Data/Models.cs" Link="Data/Models.cs" />
     <Compile Include="../Source/ColonyOS/Analytics/TrendAnalyzer.cs" Link="Analytics/TrendAnalyzer.cs" />
+    <Compile Include="../Source/ColonyOS/Analytics/DashboardViewModel.cs" Link="Analytics/DashboardViewModel.cs" />
+    <Compile Include="../Source/ColonyOS/Analytics/DashboardViewModelFactory.cs" Link="Analytics/DashboardViewModelFactory.cs" />
     <Compile Include="../Source/ColonyOS/Trading/MarketIntelligence.cs" Link="Trading/MarketIntelligence.cs" />
     <Compile Include="../Source/ColonyOS/Forecasting/ForecastEngine.cs" Link="Forecasting/ForecastEngine.cs" />
   </ItemGroup>

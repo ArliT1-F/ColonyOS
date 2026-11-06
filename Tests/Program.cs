@@ -24,6 +24,8 @@ internal static class Program
         Run("Food forecast consumes shared samples", FoodForecast);
         Run("Missing ingredients remain traceable", IngredientWarning);
         Run("Historical snapshots discard detail but retain metrics", SummaryRetention);
+        Run("Read models cap ledger rows without truncating totals", ReadModelTransactionTotals);
+        Run("Read models precompute measured food projections", ReadModelProjection);
         Console.WriteLine("PASS: " + passed + " analytical tests");
         return 0;
     }
@@ -175,6 +177,42 @@ internal static class Program
         Near(42f, sample.FoodNutrition, 0.001f, "retained food metric");
         Near(100f, sample.PowerGeneration, 0.001f, "retained power metric");
         Assert(sample.Resources.Count == 0 && sample.PowerDevices.Count == 0, "Detailed object graphs were not discarded.");
+    }
+
+    private static void ReadModelTransactionTotals()
+    {
+        HistoryStore history = new HistoryStore { Current = new ColonySample { Tick = 300000 } };
+        history.Samples.Add(history.Current);
+        for (int i = 0; i < 300; i++)
+        {
+            history.Transactions.Add(new TradeTransactionRecord
+            {
+                Tick = 299000 + i,
+                DefName = "Cloth",
+                Label = "Cloth",
+                Direction = TradeDirection.PlayerSold,
+                Count = 1,
+                UnitPrice = 2f,
+                TotalValue = 2f
+            });
+        }
+        DashboardViewModel view = DashboardViewModelFactory.Build(history).Get(DashboardTimeRange.Day);
+        Assert(view.Transactions.Count == 250, "Visible ledger should be capped at 250 rows.");
+        Near(600f, view.SalesTotal, 0.01f, "full selected-range sales total");
+        Near(0f, view.PurchasesTotal, 0.01f, "purchases total");
+    }
+
+    private static void ReadModelProjection()
+    {
+        HistoryStore history = new HistoryStore();
+        float[] values = { 120f, 100f, 80f, 60f, 40f, 20f };
+        for (int i = 0; i < values.Length; i++)
+            history.Samples.Add(new ColonySample { Tick = i * 60000, FoodNutrition = values[i] });
+        history.Current = history.Samples[history.Samples.Count - 1];
+        DashboardViewModel view = DashboardViewModelFactory.Build(history).Get(DashboardTimeRange.Week);
+        Assert(view.FoodProjection.Available, "Factory did not precompute the measured trend.");
+        Near(360000f, view.FoodProjection.TargetAtTick, 1f, "factory food target");
+        Assert(view.GetSeries(SampleMetric.FoodNutrition).Count == 6, "Measured history changed during read-model construction.");
     }
 
     private static TraderVisitRecord Visit(string key, int count)

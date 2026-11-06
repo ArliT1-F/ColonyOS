@@ -13,12 +13,12 @@ ColonyOS is a RimWorld colony intelligence mod with a custom dark operations das
 - **Overview command centre:** eight drill-down KPIs, power and wealth trends, production activity, resource value, workforce, warnings, and regional demand.
 - **Power:** generation/consumption, battery reserve and history, network balances, generator contribution, current device output, and depletion estimates.
 - **Production:** active bills, current workstation status, ingredient readouts, recorded bill-completion history, and labour coverage.
-- **Logistics:** counted resources and locations, human-edible nutrition, stockpile-slot pressure heatmaps, and food/storage trend forecasts.
+- **Logistics:** counted resources and locations, human-edible nutrition, stockpile-slot pressure heatmaps, and clearly dashed food/storage trend extrapolations.
 - **Population:** skill distribution/depth, work allocation, idle observations, and qualified production workers.
 - **Economy:** WealthWatcher totals and composition, resource base values, actual purchases/sales, and transaction history.
-- **Regional Market:** distinct **Confirmed**, **Historical**, and **Estimated** rankings; merchant profiles, current purchasing eligibility, capacity where exposed, and actual sale prices.
+- **Regional Market:** distinct **Confirmed**, **Historical**, and **Estimated** rankings; merchant profiles, current purchasing eligibility and counted restrictions, capacity where exposed, and actual sale prices.
 - **Predictive:** severity, timeframe, evidence class, confidence, supporting evidence, department drill-down, and suggested player action.
-- Persistent bounded history, four time ranges, three themes, four accent palettes, filters/sorting, tooltips, responsive grids, and configurable thresholds/widgets.
+- Persistent bounded history with metric-only older snapshots, four time ranges, three themes, four accent palettes, filters/sorting, tooltips, responsive grids, compact navigation, stacked compact-width panels, and configurable thresholds/widgets.
 
 No numbers are inserted to make empty charts look populated. Measurement limitations are shown in the interface and in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
@@ -39,9 +39,10 @@ dotnet restore Source/ColonyOS.csproj
 dotnet build Source/ColonyOS.csproj -c Release
 dotnet run --project Tests/ColonyOS.Analytics.Tests.csproj -c Release
 python3 scripts/verify_mod.py
+python3 scripts/package_mod.py
 ```
 
-Outputs go to `1.6/Assemblies/ColonyOS.dll` (`net472`, Harmony 2) and `1.7/Assemblies/ColonyOS.dll` (`net10.0`, Harmony 3). Do not bundle `0Harmony.dll`; the Harmony mod supplies it.
+Outputs go to `1.6/Assemblies/ColonyOS.dll` (`net472`, Harmony 2) and `1.7/Assemblies/ColonyOS.dll` (`net10.0`, Harmony 3). The packaging step creates an installable `dist/ColonyOS.zip`; CI uploads the same package as a build artifact. Do not bundle `0Harmony.dll`; the Harmony mod supplies it.
 
 ## Validation status
 

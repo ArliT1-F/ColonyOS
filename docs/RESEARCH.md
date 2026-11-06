@@ -10,9 +10,9 @@ The implementation was checked against public RimWorld decompiled API source and
 - `Building_WorkTable.BillStack`, `Bill_Production`, `RecipeDef` ingredients and skill requirements.
 - `Zone_Stockpile.CellCount` and `SpaceRemaining`.
 - `Pawn_WorkSettings.GetPriority`, `Pawn_SkillTracker.skills`, and `Pawn_MindState.IsIdle`.
-- `ITrader.ColonyThingsWillingToBuy`, `TraderKindDef.WillTrade`, `Tradeable.TraderWillTrade`, `Tradeable.GetPriceFor`, and `TradeDeal.TryExecute`.
+- `ITrader.ColonyThingsWillingToBuy`, `Tradeable.GetPriceFor`, `TradeDeal.TryExecute`, and `ILoadReferenceable.GetUniqueLoadID` for stable orbital-ship identity.
 
-No private member is publicized and no guessed reflection target is used. The three patch targets are strongly typed method signatures.
+No private member is publicized and no guessed reflection target is used. The three patch targets are strongly typed method signatures. CI compilation caught and replaced an inaccessible `PassingShip.loadID`, a line-drawing overload mismatch, and an invalid property-by-reference settings call before these fixes were retained.
 
 ## UI candidates
 

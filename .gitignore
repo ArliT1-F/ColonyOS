@@ -23,5 +23,6 @@ Thumbs.db
 .idea/
 .vscode/
 
-# Test artifacts
+# Test and packaging artifacts
 TestResults/
+dist/

@@ -2,10 +2,14 @@
 
 ## Automated gate
 
-- Build RimWorld 1.6 (`net472`) and 1.7 (`net10.0`) with warnings as errors.
-- Run deterministic analytics/market/forecast tests.
-- Parse all XML and verify keyed localization references.
-- Verify no third-party DLL is bundled and both mod load folders resolve.
+GitHub Actions runs the following on every push and pull request:
+
+- Restore actual `Krafs.Rimworld.Ref` packages and build RimWorld 1.6 (`net472`) and 1.7 (`net10.0`) with warnings as errors.
+- Run 15 deterministic analytics, market, forecast, history-summary, and cached read-model tests.
+- Parse all XML, verify every keyed translation reference and local texture, and check both mod load folders.
+- Verify no third-party DLL is bundled, then create and upload an installable `ColonyOS.zip` containing both versioned assemblies and all required mod files.
+
+A green run proves compilation, deterministic logic, and repository package hygiene. It does **not** prove runtime compatibility, visual quality, save integrity, trading interoperability, or performance.
 
 ## Required in-game gate (not yet performed)
 
