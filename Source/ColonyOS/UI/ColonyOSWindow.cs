@@ -25,8 +25,8 @@ namespace ColonyOS.UI
         private int transactionFilter;
 
         public override Vector2 RequestedTabSize => new Vector2(
-            Mathf.Min(1380f, Mathf.Max(760f, UI.screenWidth - 32f)),
-            Mathf.Min(840f, Mathf.Max(600f, UI.screenHeight - 32f)));
+            Mathf.Min(1380f, Mathf.Max(760f, Verse.UI.screenWidth - 32f)),
+            Mathf.Min(840f, Mathf.Max(600f, Verse.UI.screenHeight - 32f)));
         protected override float Margin => 0f;
 
         public ColonyOSWindow()
