@@ -2,6 +2,10 @@
 
 **Your colony. Your data. Your decisions.**
 
+![ColonyOS concept art — not an in-game screenshot](About/Preview.png)
+
+*Concept art for presentation only; runtime screenshot capture remains part of the release gate.*
+
 ColonyOS is a RimWorld colony intelligence mod with a custom dark operations dashboard, persistent measurements, seven connected intelligence departments, and evidence-linked forecasts. It observes and recommends; it never takes control of bills, work assignments, storage, or trading.
 
 ## Included in this implementation

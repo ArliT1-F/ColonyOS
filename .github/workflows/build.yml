@@ -16,7 +16,19 @@ jobs:
       - name: Restore RimWorld reference assemblies
         run: dotnet restore Source/ColonyOS.csproj
       - name: Build RimWorld 1.6 and 1.7
-        run: dotnet build Source/ColonyOS.csproj -c Release --no-restore
+        shell: bash
+        run: |
+          set +e
+          dotnet build Source/ColonyOS.csproj -c Release --no-restore > build.log 2>&1
+          status=$?
+          cat build.log
+          {
+            echo '### Dual-target build output'
+            echo '```text'
+            tail -c 60000 build.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
       - name: Run analytical tests
         run: dotnet run --project Tests/ColonyOS.Analytics.Tests.csproj -c Release
       - name: Verify mod package
