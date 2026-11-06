@@ -24,7 +24,9 @@ namespace ColonyOS.UI
         private int productionSort;
         private int transactionFilter;
 
-        public override Vector2 RequestedTabSize => new Vector2(1380f, 840f);
+        public override Vector2 RequestedTabSize => new Vector2(
+            Mathf.Min(1380f, Mathf.Max(760f, UI.screenWidth - 32f)),
+            Mathf.Min(840f, Mathf.Max(600f, UI.screenHeight - 32f)));
         protected override float Margin => 0f;
 
         public ColonyOSWindow()
@@ -49,7 +51,7 @@ namespace ColonyOS.UI
                 GUI.DrawTexture(inRect, BaseContent.WhiteTex);
                 GUI.color = oldColor;
 
-                float sidebarWidth = inRect.width < 1050f ? 176f : 208f;
+                float sidebarWidth = inRect.width < 900f ? 64f : inRect.width < 1150f ? 176f : 208f;
                 DrawSidebar(new Rect(inRect.x, inRect.y, sidebarWidth, inRect.height));
                 Rect header = new Rect(inRect.x + sidebarWidth, inRect.y, inRect.width - sidebarWidth, 96f);
                 DrawHeader(header);
@@ -84,24 +86,40 @@ namespace ColonyOS.UI
         private void DrawSidebar(Rect rect)
         {
             ThemePalette theme = ColonyTheme.Current;
+            bool compact = rect.width < 100f;
             GUI.color = theme.Sidebar;
             GUI.DrawTexture(rect, BaseContent.WhiteTex);
             GUI.color = Color.white;
             UiDraw.Rounded(new Rect(rect.xMax - 1f, rect.y, 1f, rect.height), theme.Border);
 
-            UiDraw.Rounded(new Rect(rect.x + 18f, rect.y + 22f, 38f, 38f), theme.Accent);
-            UiDraw.Label(new Rect(rect.x + 18f, rect.y + 22f, 38f, 38f), "C", theme.Window, GameFont.Medium, TextAnchor.MiddleCenter, true, false);
-            UiDraw.Label(new Rect(rect.x + 66f, rect.y + 20f, rect.width - 78f, 25f), "COLONY OS", theme.Text, GameFont.Small, TextAnchor.MiddleLeft, true, false);
-            UiDraw.Label(new Rect(rect.x + 66f, rect.y + 44f, rect.width - 78f, 18f), "INTELLIGENCE", theme.Faint, GameFont.Tiny, TextAnchor.MiddleLeft, false, false);
-            UiDraw.Divider(new Rect(rect.x + 18f, rect.y + 80f, rect.width - 36f, 1f));
-            UiDraw.Label(new Rect(rect.x + 18f, rect.y + 98f, rect.width - 36f, 18f), "COMMAND CENTRE", theme.Faint, GameFont.Tiny, TextAnchor.UpperLeft, true, false);
+            UiDraw.Rounded(new Rect(rect.x + (compact ? 13f : 18f), rect.y + 22f, 38f, 38f), theme.Accent);
+            UiDraw.Label(new Rect(rect.x + (compact ? 13f : 18f), rect.y + 22f, 38f, 38f), "C", theme.Window, GameFont.Medium, TextAnchor.MiddleCenter, true, false);
+            if (!compact)
+            {
+                UiDraw.Label(new Rect(rect.x + 66f, rect.y + 20f, rect.width - 78f, 25f), "COLONY OS", theme.Text, GameFont.Small, TextAnchor.MiddleLeft, true, false);
+                UiDraw.Label(new Rect(rect.x + 66f, rect.y + 44f, rect.width - 78f, 18f), "INTELLIGENCE", theme.Faint, GameFont.Tiny, TextAnchor.MiddleLeft, false, false);
+            }
+            float margin = compact ? 10f : 18f;
+            UiDraw.Divider(new Rect(rect.x + margin, rect.y + 80f, rect.width - margin * 2f, 1f));
+            if (!compact)
+                UiDraw.Label(new Rect(rect.x + 18f, rect.y + 98f, rect.width - 36f, 18f), "COMMAND CENTRE", theme.Faint, GameFont.Tiny, TextAnchor.UpperLeft, true, false);
 
-            float y = rect.y + 126f;
+            float y = rect.y + (compact ? 96f : 126f);
             foreach (Department item in Enum.GetValues(typeof(Department)))
             {
-                Rect nav = new Rect(rect.x + 10f, y, rect.width - 20f, 44f);
-                if (UiDraw.NavButton(nav, ShortDepartmentName(item), UiAssets.Icon(item), department == item))
+                Rect nav = new Rect(rect.x + (compact ? 7f : 10f), y, rect.width - (compact ? 14f : 20f), 44f);
+                bool selected = department == item;
+                if (compact)
+                {
+                    if (UiDraw.Button(nav, string.Empty, UiAssets.Icon(item), false, true, ShortDepartmentName(item)))
+                        Navigate(item);
+                    if (selected)
+                        UiDraw.Rounded(new Rect(nav.x, nav.y + 8f, 3f, nav.height - 16f), theme.Accent);
+                }
+                else if (UiDraw.NavButton(nav, ShortDepartmentName(item), UiAssets.Icon(item), selected))
+                {
                     Navigate(item);
+                }
                 y += 48f;
             }
 
@@ -110,20 +128,24 @@ namespace ColonyOS.UI
             if (view != null)
             {
                 for (int i = 0; i < view.Predictions.Count; i++)
-                {
                     if (view.Predictions[i].Severity >= PredictionSeverity.High)
                         critical++;
-                }
             }
             if (critical > 0)
             {
-                UiDraw.Pill(new Rect(rect.x + 18f, y + 6f, rect.width - 36f, 25f), critical + " high-priority signal(s)", theme.Danger);
-                y += 40f;
+                Rect badge = compact ? new Rect(rect.x + 7f, y + 6f, rect.width - 14f, 25f) : new Rect(rect.x + 18f, y + 6f, rect.width - 36f, 25f);
+                UiDraw.Pill(badge, compact ? critical.ToString() : critical + " high-priority signal(s)", theme.Danger);
             }
 
             ColonySample current = view?.Current;
             float footerY = rect.yMax - 82f;
-            UiDraw.Divider(new Rect(rect.x + 18f, footerY - 12f, rect.width - 36f, 1f));
+            UiDraw.Divider(new Rect(rect.x + margin, footerY - 12f, rect.width - margin * 2f, 1f));
+            if (compact)
+            {
+                UiDraw.Rounded(new Rect(rect.center.x - 4f, footerY + 3f, 8f, 8f), current == null ? theme.Warning : theme.Good);
+                TooltipHandler.TipRegion(new Rect(rect.x, footerY - 8f, rect.width, 32f), current == null ? "Waiting for snapshot" : "Collection active • " + current.MapCount + " player home map(s)");
+                return;
+            }
             UiDraw.Rounded(new Rect(rect.x + 18f, footerY + 3f, 7f, 7f), current == null ? theme.Warning : theme.Good);
             UiDraw.Label(new Rect(rect.x + 33f, footerY - 5f, rect.width - 48f, 22f), current == null ? "Waiting for snapshot" : "Collection active", theme.Muted, GameFont.Tiny, TextAnchor.MiddleLeft, false, false);
             UiDraw.Label(new Rect(rect.x + 18f, footerY + 22f, rect.width - 36f, 20f), "v0.1.0  •  LOCAL DATA", theme.Faint, GameFont.Tiny, TextAnchor.MiddleLeft, false, false);
@@ -137,8 +159,9 @@ namespace ColonyOS.UI
             GUI.DrawTexture(rect, BaseContent.WhiteTex);
             GUI.color = Color.white;
             Widgets.DrawLineHorizontal(rect.x, rect.yMax - 1f, rect.width, theme.Border);
-            UiDraw.Label(new Rect(rect.x + 25f, rect.y + 17f, rect.width * 0.45f, 31f), DepartmentTitle(department), theme.Text, GameFont.Medium, TextAnchor.UpperLeft, true, false);
-            UiDraw.Label(new Rect(rect.x + 26f, rect.y + 51f, rect.width * 0.46f, 22f), DepartmentSubtitle(department), theme.Muted, GameFont.Tiny, TextAnchor.UpperLeft, false, false);
+            float titleWidth = Mathf.Max(150f, rect.width - 430f);
+            UiDraw.Label(new Rect(rect.x + 25f, rect.y + 17f, titleWidth, 31f), DepartmentTitle(department), theme.Text, GameFont.Medium, TextAnchor.UpperLeft, true, false);
+            UiDraw.Label(new Rect(rect.x + 26f, rect.y + 51f, titleWidth, 22f), DepartmentSubtitle(department), theme.Muted, GameFont.Tiny, TextAnchor.UpperLeft, false, false);
 
             float right = rect.xMax - 24f;
             Rect themeButton = new Rect(right - 36f, rect.y + 22f, 36f, 36f);
@@ -165,7 +188,7 @@ namespace ColonyOS.UI
                 right -= 48f;
             }
             DashboardViewModel view = ColonyOSMod.Component?.Dashboard.Get(timeRange);
-            if (view?.Current != null)
+            if (view?.Current != null && rect.width >= 1000f)
                 UiDraw.Label(new Rect(right - 180f, rect.y + 29f, 170f, 22f), "Snapshot tick " + view.Current.Tick, theme.Faint, GameFont.Tiny, TextAnchor.MiddleRight, false, false);
         }
 

@@ -11,12 +11,14 @@ namespace ColonyOS.UI
         public string Label;
         public IReadOnlyList<MetricPoint> Points;
         public Color Color;
+        public bool Estimated;
 
-        public ChartSeriesModel(string label, IReadOnlyList<MetricPoint> points, Color color)
+        public ChartSeriesModel(string label, IReadOnlyList<MetricPoint> points, Color color, bool estimated = false)
         {
             Label = label;
             Points = points;
             Color = color;
+            Estimated = estimated;
         }
     }
 
@@ -123,7 +125,10 @@ namespace ColonyOS.UI
                 {
                     Vector2 a = Point(plot, i - 1, line.Points.Count, line.Points[i - 1].Value, min, range);
                     Vector2 b = Point(plot, i, line.Points.Count, line.Points[i].Value, min, range);
-                    Widgets.DrawLine(a, b, line.Color, 2f);
+                    if (line.Estimated)
+                        DrawDashed(a, b, line.Color);
+                    else
+                        Widgets.DrawLine(a, b, line.Color, 2f);
                 }
             }
 
@@ -244,6 +249,17 @@ namespace ColonyOS.UI
             }
         }
 
+        private static void DrawDashed(Vector2 a, Vector2 b, Color color)
+        {
+            const int pieces = 12;
+            for (int i = 0; i < pieces; i += 2)
+            {
+                Vector2 start = Vector2.Lerp(a, b, i / (float)pieces);
+                Vector2 end = Vector2.Lerp(a, b, (i + 1) / (float)pieces);
+                Widgets.DrawLine(start, end, color, 2f);
+            }
+        }
+
         private static void DrawChartTooltip(Rect plot, IList<ChartSeriesModel> series, float min, float range, string unit)
         {
             if (Event.current.type != EventType.Repaint)
@@ -267,10 +283,12 @@ namespace ColonyOS.UI
                 IReadOnlyList<MetricPoint> points = series[s].Points;
                 if (points == null || points.Count == 0)
                     continue;
-                int i = Mathf.Clamp(index, 0, points.Count - 1);
+                int i = Mathf.Clamp(Mathf.RoundToInt(normalized * (points.Count - 1)), 0, points.Count - 1);
                 if (tooltip.Length > 0)
                     tooltip += "\n";
                 tooltip += series[s].Label + ": " + points[i].Value.ToString("0.##") + unit;
+                if (series[s].Estimated)
+                    tooltip += " (extrapolated, not measured)";
             }
             float x = plot.x + plot.width * index / Mathf.Max(1, first.Points.Count - 1);
             UiDraw.Rounded(new Rect(x, plot.y, 1f, plot.height), ColonyTheme.Alpha(ColonyTheme.Current.Muted, 0.45f));

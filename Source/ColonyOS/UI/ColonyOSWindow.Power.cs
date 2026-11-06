@@ -22,33 +22,27 @@ namespace ColonyOS.UI
             Charts.Kpi(UiDraw.GridCell(rect, columns, 3, 122f), "Battery reserve", current.BatteryCapacity <= 0f ? "—" : current.BatteryPct.ToString("P1"), UiFormat.Compact(current.BatteryCharge, " Wd"), UiFormat.Compact(current.BatteryCapacity, " Wd") + " capacity", theme.Accent, Department.Power, view.GetSeries(SampleMetric.BatteryCharge), null);
             y += Mathf.CeilToInt(4f / columns) * 134f + 8f;
 
-            Rect trend = new Rect(rect.x, y, rect.width * 0.66f - 7f, 282f);
+            y = SplitPanels(rect, y, 282f, 0.66f, out Rect trend, out Rect reserve);
             Rect trendInner = UiDraw.Card(trend, "Grid output and load", "Measured instantaneous values at each snapshot");
             Charts.LineChart(trendInner, new List<ChartSeriesModel>
             {
                 new ChartSeriesModel("Generation", view.GetSeries(SampleMetric.PowerGeneration), theme.Good),
                 new ChartSeriesModel("Consumption", view.GetSeries(SampleMetric.PowerConsumption), theme.Danger)
             }, " W");
-            Rect reserve = new Rect(trend.xMax + 14f, y, rect.xMax - trend.xMax - 14f, 282f);
             Rect reserveInner = UiDraw.Card(reserve, "Reserve intelligence", "Watt-days and current depletion estimate");
             DrawReservePanel(reserveInner, view, current);
-            y += 296f;
 
-            Rect battery = new Rect(rect.x, y, rect.width * 0.48f - 7f, 282f);
+            y = SplitPanels(rect, y, 282f, 0.48f, out Rect battery, out Rect contribution);
             Rect batteryInner = UiDraw.Card(battery, "Battery charge history", "No forecast curve is drawn without a measured trend");
             Charts.LineChart(batteryInner, OneSeries(view, SampleMetric.BatteryCharge, "Stored energy", theme.Accent), " Wd");
-            Rect contribution = new Rect(battery.xMax + 14f, y, rect.xMax - battery.xMax - 14f, 282f);
             Rect contributionInner = UiDraw.Card(contribution, "Generator contribution", "Active output by building at the latest snapshot");
-            Charts.RankingBars(contributionInner, PowerDeviceValues(current, true), "No active generation", "No building is currently reporting positive power output.", " W");
-            y += 296f;
+            Charts.RankingBars(contributionInner, view.GeneratorContributionRanking, "No active generation", "No building is currently reporting positive power output.", " W");
 
-            Rect networks = new Rect(rect.x, y, rect.width * 0.52f - 7f, 340f);
+            y = SplitPanels(rect, y, 340f, 0.52f, out Rect networks, out Rect consumers);
             Rect networksInner = UiDraw.Card(networks, "Power network status", current.PowerNetworks.Count + " independently measured network(s)");
             DrawNetworks(networksInner, current.PowerNetworks);
-            Rect consumers = new Rect(networks.xMax + 14f, y, rect.xMax - networks.xMax - 14f, 340f);
             Rect consumersInner = UiDraw.Card(consumers, "Consumption & generator exceptions", "Largest current loads and offline positive-output buildings");
-            DrawPowerExceptions(consumersInner, current);
-            y += 354f;
+            DrawPowerExceptions(consumersInner, view.PowerExceptionRanking);
             UiDraw.Label(new Rect(rect.x, y, rect.width, 42f), "Measurement boundary: building values are current CompPowerTrader outputs, not per-building energy meters or historical utilization. Potential output is the component's current output setting while offline.", theme.Faint, GameFont.Tiny);
         }
 
@@ -74,22 +68,6 @@ namespace ColonyOS.UI
             }
         }
 
-        private static List<NamedValue> PowerDeviceValues(ColonySample current, bool generators)
-        {
-            List<NamedValue> values = new List<NamedValue>();
-            for (int i = 0; i < current.PowerDevices.Count; i++)
-            {
-                PowerDeviceSnapshot device = current.PowerDevices[i];
-                float value = generators ? device.Output : -device.Output;
-                if (value <= 0f)
-                    continue;
-                values.Add(new NamedValue(device.BuildingDefName + i, device.Label, value));
-            }
-            values.Sort((a, b) => b.Value.CompareTo(a.Value));
-            if (values.Count > 8) values.RemoveRange(8, values.Count - 8);
-            return values;
-        }
-
         private static void DrawNetworks(Rect rect, IReadOnlyList<PowerNetworkSnapshot> networks)
         {
             if (networks.Count == 0) { UiDraw.EmptyState(rect, "No power networks", "Build or connect a power network to begin monitoring."); return; }
@@ -107,14 +85,8 @@ namespace ColonyOS.UI
             }
         }
 
-        private static void DrawPowerExceptions(Rect rect, ColonySample current)
+        private static void DrawPowerExceptions(Rect rect, IReadOnlyList<PowerDeviceSnapshot> devices)
         {
-            List<PowerDeviceSnapshot> devices = new List<PowerDeviceSnapshot>(current.PowerDevices);
-            devices.Sort((a, b) =>
-            {
-                int offline = (b.PotentialOutput > 0f && !b.Active).CompareTo(a.PotentialOutput > 0f && !a.Active);
-                return offline != 0 ? offline : a.Output.CompareTo(b.Output);
-            });
             int count = Math.Min(8, devices.Count);
             if (count == 0) { UiDraw.EmptyState(rect, "No power devices", "No building-level power components were found."); return; }
             float rowHeight = Math.Min(39f, rect.height / count);

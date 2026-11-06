@@ -52,6 +52,13 @@ namespace ColonyOS.Analytics
         public float SalesTotal;
         public float PurchasesTotal;
         public int HistorySampleCount;
+        public IReadOnlyList<NamedValue> ResourceCountRanking = new List<NamedValue>();
+        public IReadOnlyList<NamedValue> ResourceValueRanking = new List<NamedValue>();
+        public IReadOnlyList<NamedValue> GeneratorContributionRanking = new List<NamedValue>();
+        public IReadOnlyList<PowerDeviceSnapshot> PowerExceptionRanking = new List<PowerDeviceSnapshot>();
+        public IReadOnlyList<WorkbenchSnapshot> LabourConstraintRanking = new List<WorkbenchSnapshot>();
+        public ForecastLine FoodProjection = new ForecastLine();
+        public ForecastLine StorageProjection = new ForecastLine();
 
         private readonly Dictionary<SampleMetric, List<MetricPoint>> series = new Dictionary<SampleMetric, List<MetricPoint>>();
 

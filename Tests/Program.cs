@@ -20,8 +20,10 @@ internal static class Program
         Run("Historical demand uses actual sale totals", HistoricalDemand);
         Run("Unsupported market estimates are empty", EmptyMarket);
         Run("Battery depletion uses measured deficit", BatteryForecast);
+        Run("Rising consumption reaches generation capacity", CapacityForecast);
         Run("Food forecast consumes shared samples", FoodForecast);
         Run("Missing ingredients remain traceable", IngredientWarning);
+        Run("Historical snapshots discard detail but retain metrics", SummaryRetention);
         Console.WriteLine("PASS: " + passed + " analytical tests");
         return 0;
     }
@@ -146,6 +148,33 @@ internal static class Program
         Prediction prediction = Find(predictions, "production.ingredients");
         Assert(prediction.Evidence == EvidenceKind.Confirmed, "Exact missing ingredients should be confirmed.");
         Assert(prediction.SupportingEvidence[0].Contains("Cloth"), "Affected ingredient is not traceable.");
+    }
+
+    private static void CapacityForecast()
+    {
+        List<ColonySample> samples = new List<ColonySample>();
+        for (int i = 0; i < 6; i++)
+            samples.Add(new ColonySample { Tick = i * 60000, PowerGeneration = 100f, PowerConsumption = 10f + i * 10f });
+        ForecastOptions options = new ForecastOptions { HorizonHours = 120, RetentionDays = 120 };
+        List<Prediction> predictions = ForecastEngine.Generate(samples[samples.Count - 1], samples, new List<TraderVisitRecord>(), new List<TradeTransactionRecord>(), options, 300000);
+        Prediction prediction = Find(predictions, "power.capacity-approach");
+        Near(240000f, prediction.TimeframeTicks, 1f, "capacity timeframe");
+        Assert(prediction.Evidence == EvidenceKind.Estimated, "Capacity projection must be estimated.");
+    }
+
+    private static void SummaryRetention()
+    {
+        ColonySample sample = new ColonySample
+        {
+            FoodNutrition = 42f,
+            PowerGeneration = 100f,
+            Resources = new List<ResourceSnapshot> { new ResourceSnapshot { DefName = "Cloth", Count = 10 } },
+            PowerDevices = new List<PowerDeviceSnapshot> { new PowerDeviceSnapshot { Label = "Generator" } }
+        };
+        sample.ReduceToSummary();
+        Near(42f, sample.FoodNutrition, 0.001f, "retained food metric");
+        Near(100f, sample.PowerGeneration, 0.001f, "retained power metric");
+        Assert(sample.Resources.Count == 0 && sample.PowerDevices.Count == 0, "Detailed object graphs were not discarded.");
     }
 
     private static TraderVisitRecord Visit(string key, int count)

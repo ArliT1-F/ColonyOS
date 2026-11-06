@@ -14,6 +14,7 @@ namespace ColonyOS.UI
         private string demandCacheQuery;
         private int demandCacheSort;
         private List<DemandOpportunity> demandCache = new List<DemandOpportunity>();
+        private int traderGoodsFilter;
 
         private void DrawMarketPage(DashboardViewModel view, Rect rect)
         {
@@ -25,10 +26,14 @@ namespace ColonyOS.UI
                 if (UiDraw.Button(new Rect(rect.x + i * 116f, y, 108f, 34f), tabs[i], null, (int)marketTab == i))
                     marketTab = (EvidenceKind)i;
             }
-            marketSearch = UiDraw.Search(new Rect(rect.xMax - 356f, y, 190f, 34f), marketSearch, "Search goods");
-            if (UiDraw.Button(new Rect(rect.xMax - 158f, y, 158f, 34f), "Sort: " + (marketSort == 0 ? "rank" : marketSort == 1 ? "confidence" : "stock")))
+            bool compact = rect.width < 700f;
+            float controlY = compact ? y + 44f : y;
+            Rect searchRect = compact ? new Rect(rect.x, controlY, rect.width * 0.52f - 6f, 34f) : new Rect(rect.xMax - 356f, controlY, 190f, 34f);
+            Rect sortRect = compact ? new Rect(rect.x + rect.width * 0.52f + 6f, controlY, rect.width * 0.48f - 6f, 34f) : new Rect(rect.xMax - 158f, controlY, 158f, 34f);
+            marketSearch = UiDraw.Search(searchRect, marketSearch, "Search goods");
+            if (UiDraw.Button(sortRect, "Sort: " + (marketSort == 0 ? "rank" : marketSort == 1 ? "confidence" : "stock")))
                 marketSort = (marketSort + 1) % 3;
-            y += 46f;
+            y += compact ? 92f : 46f;
 
             Rect evidenceBanner = new Rect(rect.x, y, rect.width, 58f);
             Color evidenceColor = theme.Evidence(marketTab);
@@ -43,23 +48,19 @@ namespace ColonyOS.UI
             y += 72f;
 
             List<DemandOpportunity> demand = FilteredDemand(view);
-            Rect ranking = new Rect(rect.x, y, rect.width * 0.57f - 7f, 414f);
+            y = SplitPanels(rect, y, 414f, 0.57f, out Rect ranking, out Rect detail);
             Rect rankingInner = UiDraw.Card(ranking, "Merchant demand ranking", demand.Count + " matching good(s) • select for evidence");
             DrawDemandRanking(rankingInner, demand);
-            Rect detail = new Rect(ranking.xMax + 14f, y, rect.xMax - ranking.xMax - 14f, 414f);
             DemandOpportunity selected = SelectedGood(demand);
             Rect detailInner = UiDraw.Card(detail, "Demand evidence", selected?.Label ?? "No good selected");
             DrawDemandDetail(detailInner, selected);
-            y += 430f;
 
             TraderVisitRecord trader = SelectedTrader(view);
-            Rect directory = new Rect(rect.x, y, rect.width * 0.41f - 7f, 526f);
+            y = SplitPanels(rect, y, 526f, 0.41f, out Rect directory, out Rect profile);
             Rect directoryInner = UiDraw.Card(directory, "Merchant directory", "Active visitors and previously observed trader identities");
             DrawTraderDirectory(directoryInner, view.TraderDirectory);
-            Rect profile = new Rect(directory.xMax + 14f, y, rect.xMax - directory.xMax - 14f, 526f);
             Rect profileInner = UiDraw.Card(profile, "Merchant profile", trader?.TraderName ?? "No trader selected");
             DrawTraderProfile(profileInner, trader, view.Transactions);
-            y += 542f;
             UiDraw.Label(new Rect(rect.x, y, rect.width, 48f), "Purchasing eligibility and purchasing capacity are not inferred from what a merchant sells. Confirmed goods come from ColonyThingsWillingToBuy/tradeables; silver capacity is summed from current trader goods where exposed. Forecast confidence is deliberately reduced with sparse evidence.", theme.Faint, GameFont.Tiny);
         }
 
@@ -195,17 +196,25 @@ namespace ColonyOS.UI
             DrawStatRow(new Rect(rect.x, rect.y + 37f, rect.width, 25f), "Purchasing capacity", trader.PurchasingCapacity > 0f ? UiFormat.Compact(trader.PurchasingCapacity) + " silver" : "Not exposed / none", theme.Text);
             DrawStatRow(new Rect(rect.x, rect.y + 64f, rect.width, 25f), "First observed", UiFormat.TickAge(trader.FirstSeenTick, trader.LastSeenTick), theme.Muted);
             UiDraw.Divider(new Rect(rect.x, rect.y + 99f, rect.width, 1f));
-            UiDraw.Label(new Rect(rect.x, rect.y + 109f, rect.width, 22f), trader.Active ? "Confirmed current purchasing eligibility" : "Eligibility at last observation (historical)", theme.Text, GameFont.Tiny, TextAnchor.UpperLeft, true, false);
-            int goods = Math.Min(6, trader.EligibleGoods.Count);
+            string goodsTitle = traderGoodsFilter == 0
+                ? (trader.Active ? "Confirmed current purchasing eligibility" : "Eligibility at last observation (historical)")
+                : (trader.Active ? "Counted goods not currently eligible" : "Counted goods not eligible at last observation");
+            UiDraw.Label(new Rect(rect.x, rect.y + 109f, Mathf.Max(80f, rect.width - 154f), 22f), goodsTitle, theme.Text, GameFont.Tiny, TextAnchor.UpperLeft, true, false);
+            if (UiDraw.Button(new Rect(rect.xMax - 148f, rect.y + 106f, 70f, 25f), "Can buy", null, traderGoodsFilter == 0))
+                traderGoodsFilter = 0;
+            if (UiDraw.Button(new Rect(rect.xMax - 72f, rect.y + 106f, 70f, 25f), "Cannot", null, traderGoodsFilter == 1))
+                traderGoodsFilter = 1;
+            IReadOnlyList<TradeEligibilityRecord> goodsSource = traderGoodsFilter == 0 ? trader.EligibleGoods : trader.IneligibleGoods;
+            int goods = Math.Min(6, goodsSource.Count);
             for (int i = 0; i < goods; i++)
             {
-                TradeEligibilityRecord good = trader.EligibleGoods[i];
+                TradeEligibilityRecord good = goodsSource[i];
                 float y = rect.y + 136f + i * 25f;
                 UiDraw.Label(new Rect(rect.x + 6f, y, rect.width * 0.7f, 23f), good.Label, theme.Muted, GameFont.Tiny, TextAnchor.MiddleLeft, false, false);
                 UiDraw.Label(new Rect(rect.x + rect.width * 0.72f, y, rect.width * 0.26f, 23f), "×" + good.AvailableCount, theme.Text, GameFont.Tiny, TextAnchor.MiddleRight, false, false);
             }
             if (goods == 0)
-                UiDraw.Label(new Rect(rect.x + 6f, rect.y + 139f, rect.width - 12f, 44f), "No eligible colony goods were exposed at the latest observation.", theme.Faint, GameFont.Tiny);
+                UiDraw.Label(new Rect(rect.x + 6f, rect.y + 139f, rect.width - 12f, 44f), traderGoodsFilter == 0 ? "No eligible colony goods were exposed at the latest observation." : "No complementary counted goods were recorded. Items outside the resource readout are not classified.", theme.Faint, GameFont.Tiny);
             float historyY = rect.y + 299f;
             UiDraw.Divider(new Rect(rect.x, historyY, rect.width, 1f));
             UiDraw.Label(new Rect(rect.x, historyY + 10f, rect.width, 22f), "Recent transactions with this trader", theme.Text, GameFont.Tiny, TextAnchor.UpperLeft, true, false);

@@ -16,27 +16,43 @@ namespace ColonyOS.UI
 
         private float ContentHeight(DashboardViewModel view, float width)
         {
+            bool compact = width < 700f;
             switch (department)
             {
                 case Department.Production:
                     int columns = width > 1050f ? 3 : width > 680f ? 2 : 1;
                     int tables = FilteredWorkbenches(view).Count;
-                    return 690f + Mathf.CeilToInt((float)Math.Max(1, tables) / columns) * 190f + 70f;
+                    return 760f + Mathf.CeilToInt((float)Math.Max(1, tables) / columns) * 190f + (compact ? 300f : 0f);
                 case Department.Logistics:
                     int zoneColumns = width > 1050f ? 4 : width > 680f ? 3 : 2;
                     int zones = view.Current?.StorageZones.Count ?? 0;
-                    return 1030f + Mathf.CeilToInt((float)Math.Max(1, Math.Min(24, zones)) / zoneColumns) * 106f;
-                case Department.RegionalMarket: return 1190f;
-                case Department.Predictive: return Math.Max(1000f, 180f + view.Predictions.Count * 122f);
-                case Department.Economy: return 1390f;
+                    return 1030f + Mathf.CeilToInt((float)Math.Max(1, Math.Min(24, zones)) / zoneColumns) * 106f + (compact ? 600f : 0f);
+                case Department.RegionalMarket: return 1190f + (compact ? 1100f : 0f);
+                case Department.Predictive:
+                    int predictionListHeight = view.Predictions.Count == 0 ? 480 : view.Predictions.Count * 122;
+                    return compact ? 1230f + predictionListHeight : Math.Max(1000f, 180f + view.Predictions.Count * 122f);
+                case Department.Economy: return 1390f + (compact ? 580f : 0f);
                 case Department.Population:
                     int skillColumns = width > 1050f ? 4 : width > 680f ? 3 : 2;
-                    return 850f + Mathf.CeilToInt(12f / skillColumns) * 108f;
-                case Department.Power: return 1130f;
+                    return 850f + Mathf.CeilToInt(12f / skillColumns) * 108f + (compact ? 320f : 0f);
+                case Department.Power: return 1130f + (compact ? 900f : 0f);
                 default:
                     int kpiColumns = width >= 1050f ? 4 : width >= 700f ? 3 : 2;
-                    return 1300f + Mathf.CeilToInt(8f / kpiColumns) * 140f;
+                    return 1600f + Mathf.CeilToInt(8f / kpiColumns) * 140f + (compact ? 1250f : 0f);
             }
+        }
+
+        private static float SplitPanels(Rect content, float y, float height, float leftShare, out Rect left, out Rect right)
+        {
+            if (content.width < 700f)
+            {
+                left = new Rect(content.x, y, content.width, height);
+                right = new Rect(content.x, y + height + 14f, content.width, height);
+                return y + (height + 14f) * 2f;
+            }
+            left = new Rect(content.x, y, content.width * leftShare - 7f, height);
+            right = new Rect(left.xMax + 14f, y, content.xMax - left.xMax - 14f, height);
+            return y + height + 14f;
         }
 
         private static float PercentChange(IReadOnlyList<MetricPoint> points)
@@ -49,37 +65,23 @@ namespace ColonyOS.UI
             return new List<ChartSeriesModel> { new ChartSeriesModel(label, view.GetSeries(metric), color) };
         }
 
-        private static List<NamedValue> ResourceCounts(ColonySample current, int maximum = 8)
+        private static List<ChartSeriesModel> ProjectionSeries(DashboardViewModel view, SampleMetric metric, ForecastLine forecast, float threshold, string label, Color color)
         {
-            List<NamedValue> values = new List<NamedValue>();
-            if (current == null)
-                return values;
-            int count = Math.Min(maximum, current.Resources.Count);
-            for (int i = 0; i < count; i++)
+            IReadOnlyList<MetricPoint> history = view.GetSeries(metric);
+            List<ChartSeriesModel> result = new List<ChartSeriesModel> { new ChartSeriesModel(label, history, color) };
+            if (forecast == null || !forecast.Available || history.Count == 0)
+                return result;
+            float delta = forecast.TargetAtTick - history[history.Count - 1].Tick;
+            if (delta <= 0f || delta > ColonyOSMod.Settings.ForecastHorizonHours * 2500f || forecast.TargetAtTick >= int.MaxValue)
+                return result;
+            List<MetricPoint> projection = new List<MetricPoint>
             {
-                ResourceSnapshot resource = current.Resources[i];
-                values.Add(new NamedValue(resource.DefName, resource.Label, resource.Count));
-            }
-            return values;
-        }
-
-        private static List<NamedValue> ResourceValues(ColonySample current, int maximum = 8)
-        {
-            List<NamedValue> values = new List<NamedValue>();
-            if (current == null)
-                return values;
-            for (int i = 0; i < current.Resources.Count; i++)
-            {
-                ResourceSnapshot resource = current.Resources[i];
-                float value = resource.Count * resource.BaseMarketValue;
-                if (value <= 0f)
-                    continue;
-                values.Add(new NamedValue(resource.DefName, resource.Label, value));
-            }
-            values.Sort((a, b) => b.Value.CompareTo(a.Value));
-            if (values.Count > maximum)
-                values.RemoveRange(maximum, values.Count - maximum);
-            return values;
+                history[history.Count - 1],
+                new MetricPoint((int)forecast.TargetAtTick, threshold)
+            };
+            string title = "Estimated • " + UiFormat.Duration((int)delta) + " • R² " + forecast.RSquared.ToString("0.00");
+            result.Add(new ChartSeriesModel(title, projection, ColonyTheme.Alpha(color, 0.8f), true));
+            return result;
         }
 
         private static List<NamedValue> WealthComposition(ColonySample current)

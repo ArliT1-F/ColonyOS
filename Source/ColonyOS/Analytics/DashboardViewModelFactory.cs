@@ -20,6 +20,12 @@ namespace ColonyOS.Analytics
             traders.Sort((a, b) => b.LastSeenTick.CompareTo(a.LastSeenTick));
             if (traders.Count > 200)
                 traders.RemoveRange(200, traders.Count - 200);
+            BuildCurrentRankings(history.Current,
+                out List<NamedValue> resourceCounts,
+                out List<NamedValue> resourceValues,
+                out List<NamedValue> generators,
+                out List<PowerDeviceSnapshot> powerExceptions,
+                out List<WorkbenchSnapshot> labourConstraints);
 
             foreach (DashboardTimeRange range in Enum.GetValues(typeof(DashboardTimeRange)))
             {
@@ -34,14 +40,75 @@ namespace ColonyOS.Analytics
                     HistoricalDemand = historical,
                     EstimatedDemand = estimated,
                     TraderDirectory = traders,
-                    HistorySampleCount = history.Samples.Count
+                    HistorySampleCount = history.Samples.Count,
+                    ResourceCountRanking = resourceCounts,
+                    ResourceValueRanking = resourceValues,
+                    GeneratorContributionRanking = generators,
+                    PowerExceptionRanking = powerExceptions,
+                    LabourConstraintRanking = labourConstraints
                 };
                 BuildSeries(view, history.Samples);
+                view.FoodProjection = TrendAnalyzer.ProjectToThreshold(view.GetSeries(SampleMetric.FoodNutrition), 0f, true);
+                view.StorageProjection = TrendAnalyzer.ProjectToThreshold(view.GetSeries(SampleMetric.StorageUtilization), 100f, false);
                 BuildProduction(view, history.ProductionEvents);
                 BuildTransactions(view, history.Transactions);
                 cache.Views.Add(range, view);
             }
             return cache;
+        }
+
+        private static void BuildCurrentRankings(ColonySample current,
+            out List<NamedValue> resourceCounts,
+            out List<NamedValue> resourceValues,
+            out List<NamedValue> generators,
+            out List<PowerDeviceSnapshot> powerExceptions,
+            out List<WorkbenchSnapshot> labourConstraints)
+        {
+            resourceCounts = new List<NamedValue>();
+            resourceValues = new List<NamedValue>();
+            generators = new List<NamedValue>();
+            powerExceptions = new List<PowerDeviceSnapshot>();
+            labourConstraints = new List<WorkbenchSnapshot>();
+            if (current == null)
+                return;
+
+            for (int i = 0; i < current.Resources.Count; i++)
+            {
+                ResourceSnapshot resource = current.Resources[i];
+                resourceCounts.Add(new NamedValue(resource.DefName, resource.Label, resource.Count));
+                float value = resource.Count * resource.BaseMarketValue;
+                if (value > 0f)
+                    resourceValues.Add(new NamedValue(resource.DefName, resource.Label, value));
+            }
+            resourceCounts.Sort((a, b) => b.Value.CompareTo(a.Value));
+            resourceValues.Sort((a, b) => b.Value.CompareTo(a.Value));
+            if (resourceCounts.Count > 8) resourceCounts.RemoveRange(8, resourceCounts.Count - 8);
+            if (resourceValues.Count > 6) resourceValues.RemoveRange(6, resourceValues.Count - 6);
+
+            for (int i = 0; i < current.PowerDevices.Count; i++)
+            {
+                PowerDeviceSnapshot device = current.PowerDevices[i];
+                if (device.Output > 0f)
+                    generators.Add(new NamedValue(device.BuildingDefName + i, device.Label, device.Output));
+                powerExceptions.Add(device);
+            }
+            generators.Sort((a, b) => b.Value.CompareTo(a.Value));
+            if (generators.Count > 8) generators.RemoveRange(8, generators.Count - 8);
+            powerExceptions.Sort((a, b) =>
+            {
+                int offline = (b.PotentialOutput > 0f && !b.Active).CompareTo(a.PotentialOutput > 0f && !a.Active);
+                return offline != 0 ? offline : a.Output.CompareTo(b.Output);
+            });
+            if (powerExceptions.Count > 8) powerExceptions.RemoveRange(8, powerExceptions.Count - 8);
+
+            for (int i = 0; i < current.Workbenches.Count; i++)
+            {
+                WorkbenchSnapshot table = current.Workbenches[i];
+                if (table.ActiveBillCount > 0 && !string.IsNullOrEmpty(table.CurrentRecipe))
+                    labourConstraints.Add(table);
+            }
+            labourConstraints.Sort((a, b) => a.QualifiedAvailablePawns.CompareTo(b.QualifiedAvailablePawns));
+            if (labourConstraints.Count > 5) labourConstraints.RemoveRange(5, labourConstraints.Count - 5);
         }
 
         private static void BuildSeries(DashboardViewModel view, IReadOnlyList<ColonySample> samples)
@@ -129,13 +196,12 @@ namespace ColonyOS.Analytics
                 TradeTransactionRecord transaction = transactions[i];
                 if (transaction.Tick < view.CutoffTick)
                     continue;
-                view.Transactions.Add(transaction);
+                if (view.Transactions.Count < 250)
+                    view.Transactions.Add(transaction);
                 if (transaction.Direction == TradeDirection.PlayerSold)
                     view.SalesTotal += transaction.TotalValue;
                 else
                     view.PurchasesTotal += transaction.TotalValue;
-                if (view.Transactions.Count >= 250)
-                    break;
             }
         }
 

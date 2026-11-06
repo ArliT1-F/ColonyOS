@@ -34,7 +34,8 @@ namespace ColonyOS.UI
             if (selected == null && view.Predictions.Count > 0)
                 selected = view.Predictions[0];
 
-            float leftWidth = rect.width * 0.58f - 7f;
+            bool compact = rect.width < 700f;
+            float leftWidth = compact ? rect.width : rect.width * 0.58f - 7f;
             if (view.Predictions.Count == 0)
             {
                 Rect empty = new Rect(rect.x, y, leftWidth, 480f);
@@ -46,7 +47,11 @@ namespace ColonyOS.UI
                     DrawPredictionCard(new Rect(rect.x, y + i * 122f, leftWidth, 112f), view.Predictions[i], selected?.Id == view.Predictions[i].Id);
             }
 
-            Rect detail = new Rect(rect.x + leftWidth + 14f, y, rect.xMax - rect.x - leftWidth - 14f, 544f);
+            float listHeight = view.Predictions.Count == 0 ? 480f : view.Predictions.Count * 122f;
+            float detailY = compact ? y + listHeight + 14f : y;
+            Rect detail = compact
+                ? new Rect(rect.x, detailY, rect.width, 544f)
+                : new Rect(rect.x + leftWidth + 14f, detailY, rect.xMax - rect.x - leftWidth - 14f, 544f);
             Rect detailInner = UiDraw.Card(detail, "Prediction evidence", selected == null ? "Select a signal" : selected.Id);
             DrawPredictionDetail(detailInner, selected);
             Rect method = new Rect(detail.x, detail.yMax + 14f, detail.width, 274f);

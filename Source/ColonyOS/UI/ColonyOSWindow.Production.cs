@@ -25,13 +25,12 @@ namespace ColonyOS.UI
             Charts.Kpi(UiDraw.GridCell(rect, columns, 3, 122f), "Completed iterations", current.ProductionIterationsLastDay + "/day", "Actual observed events", "Rolling 24 in-game hours", theme.Accent, Department.Production, view.ProductionSeries, null);
             y += Mathf.CeilToInt(4f / columns) * 134f + 8f;
 
-            Rect output = new Rect(rect.x, y, rect.width * 0.61f - 7f, 286f);
+            y = SplitPanels(rect, y, 286f, 0.61f, out Rect output, out Rect recipes);
             Rect outputInner = UiDraw.Card(output, "Production output history", "One event per completed bill iteration; variable item yields are not guessed");
             Charts.VerticalBars(outputInner, view.ProductionSeries, theme.Accent2);
-            Rect recipes = new Rect(output.xMax + 14f, y, rect.xMax - output.xMax - 14f, 286f);
             Rect recipesInner = UiDraw.Card(recipes, "Completion leaderboard", "Most frequently completed recipes in the selected range");
             Charts.RankingBars(recipesInner, view.RecipeLeaderboard, "No completions recorded", "Finish a production bill with ColonyOS active to begin this history.");
-            y += 300f;
+            y += 14f;
 
             Rect controls = new Rect(rect.x, y, rect.width, 40f);
             productionSearch = UiDraw.Search(new Rect(controls.x, controls.y, Mathf.Min(390f, controls.width * 0.52f), 34f), productionSearch, "Search workstations or recipes");

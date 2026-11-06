@@ -89,9 +89,11 @@ namespace ColonyOS.Data
             Scribe_Values.Look(ref PurchasingCapacity, "purchasingCapacity");
             Scribe_Values.Look(ref Active, "active");
             Scribe_Collections.Look(ref EligibleGoods, "eligibleGoods", LookMode.Deep);
+            Scribe_Collections.Look(ref IneligibleGoods, "ineligibleGoods", LookMode.Deep);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 EligibleGoods = EligibleGoods ?? new System.Collections.Generic.List<TradeEligibilityRecord>();
+                IneligibleGoods = IneligibleGoods ?? new System.Collections.Generic.List<TradeEligibilityRecord>();
                 Active = false;
             }
         }

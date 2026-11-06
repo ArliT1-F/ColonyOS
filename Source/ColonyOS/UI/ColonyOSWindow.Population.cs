@@ -22,16 +22,14 @@ namespace ColonyOS.UI
             Charts.Kpi(UiDraw.GridCell(rect, columns, 3, 122f), "Tracked skills", current.Skills.Count.ToString(), current.Workforce.Count + " enabled work types", "Non-disabled records", theme.Accent2, Department.Population, null, null);
             y += Mathf.CeilToInt(4f / columns) * 134f + 8f;
 
-            Rect skills = new Rect(rect.x, y, rect.width * 0.48f - 7f, 302f);
+            y = SplitPanels(rect, y, 302f, 0.48f, out Rect skills, out Rect work);
             Rect skillsInner = UiDraw.Card(skills, "Skill distribution", "Average level across non-disabled colonist skill records");
             List<NamedValue> skillValues = new List<NamedValue>();
             for (int i = 0; i < Math.Min(8, current.Skills.Count); i++)
                 skillValues.Add(new NamedValue(current.Skills[i].DefName, current.Skills[i].Label, current.Skills[i].AverageLevel, current.Skills[i].HighestLevel));
             Charts.RankingBars(skillsInner, skillValues, "No skill records", "Skill records appear after colonists are collected.");
-            Rect work = new Rect(skills.xMax + 14f, y, rect.xMax - skills.xMax - 14f, 302f);
             Rect workInner = UiDraw.Card(work, "Workforce allocation", "Enabled assignments and non-downed availability");
             DrawWorkforceAllocation(workInner, current.Workforce);
-            y += 316f;
 
             UiDraw.Label(new Rect(rect.x, y, rect.width, 25f), "Skill depth and coverage", theme.Text, GameFont.Small, TextAnchor.UpperLeft, true, false);
             y += 34f;
@@ -52,14 +50,7 @@ namespace ColonyOS.UI
 
             Rect labour = new Rect(rect.x, y, rect.width, 240f);
             Rect labourInner = UiDraw.Card(labour, "Production labour coverage", "Qualified, non-downed colonists with relevant work enabled");
-            List<WorkbenchSnapshot> constrained = new List<WorkbenchSnapshot>();
-            for (int i = 0; i < current.Workbenches.Count; i++)
-            {
-                WorkbenchSnapshot table = current.Workbenches[i];
-                if (table.ActiveBillCount > 0 && !string.IsNullOrEmpty(table.CurrentRecipe))
-                    constrained.Add(table);
-            }
-            constrained.Sort((a, b) => a.QualifiedAvailablePawns.CompareTo(b.QualifiedAvailablePawns));
+            IReadOnlyList<WorkbenchSnapshot> constrained = view.LabourConstraintRanking;
             if (constrained.Count == 0)
             {
                 UiDraw.EmptyState(labourInner, "No active recipe requirements", "Skill coverage appears when production bills are active.");

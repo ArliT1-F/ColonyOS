@@ -60,8 +60,7 @@ namespace ColonyOS.UI
 
             if (ColonyOSMod.Settings.ShowPowerWidget)
             {
-                float leftWidth = rect.width * 0.64f - 7f;
-                Rect powerCard = new Rect(rect.x, y, leftWidth, 278f);
+                y = SplitPanels(rect, y, 278f, 0.64f, out Rect powerCard, out Rect warnings);
                 Rect powerInner = UiDraw.Card(powerCard, "Generation versus consumption", "Measured watts across collected snapshots");
                 List<ChartSeriesModel> power = new List<ChartSeriesModel>
                 {
@@ -72,33 +71,50 @@ namespace ColonyOS.UI
                 if (Widgets.ButtonInvisible(powerCard))
                     Navigate(Department.Power);
 
-                Rect warnings = new Rect(powerCard.xMax + 14f, y, rect.xMax - powerCard.xMax - 14f, 278f);
                 Rect warningsInner = UiDraw.Card(warnings, "Operational intelligence", view.Predictions.Count + " active signal(s)");
                 DrawPredictionRows(warningsInner, view.Predictions, 3);
-                y += 292f;
             }
 
             if (ColonyOSMod.Settings.ShowWealthWidget)
             {
-                Rect wealth = new Rect(rect.x, y, rect.width * 0.58f - 7f, 278f);
+                y = SplitPanels(rect, y, 278f, 0.58f, out Rect wealth, out Rect resources);
                 Rect wealthInner = UiDraw.Card(wealth, "Colony wealth trajectory", "Actual RimWorld wealth watcher totals");
                 Charts.LineChart(wealthInner, OneSeries(view, SampleMetric.Wealth, "Total wealth", theme.Accent2), " silver", false);
                 if (Widgets.ButtonInvisible(wealth))
                     Navigate(Department.Economy);
-                Rect resources = new Rect(wealth.xMax + 14f, y, rect.xMax - wealth.xMax - 14f, 278f);
                 Rect resourcesInner = UiDraw.Card(resources, "Resource value distribution", "Base market value × counted quantity");
-                Charts.Donut(resourcesInner, ResourceValues(current, 6), "base value");
+                Charts.Donut(resourcesInner, view.ResourceValueRanking, "base value");
                 if (Widgets.ButtonInvisible(resources))
                     Navigate(Department.Logistics);
-                y += 292f;
+            }
+
+            if (ColonyOSMod.Settings.ShowFoodWidget)
+            {
+                y = SplitPanels(rect, y, 278f, 0.62f, out Rect food, out Rect resources);
+                Rect foodInner = UiDraw.Card(food, "Food reserve projection", "Measured nutrition with a dashed estimate only when a supported trend exists");
+                Charts.LineChart(foodInner, ProjectionSeries(view, SampleMetric.FoodNutrition, view.FoodProjection, 0f, "Counted nutrition", theme.Good));
+                if (Widgets.ButtonInvisible(food))
+                    Navigate(Department.Logistics);
+                Rect resourcesInner = UiDraw.Card(resources, "Important resource quantities", "Largest currently counted resource stacks");
+                Charts.RankingBars(resourcesInner, view.ResourceCountRanking, "No counted resources", "Current eligible-storage quantities will appear here.");
+                if (Widgets.ButtonInvisible(resources))
+                    Navigate(Department.Logistics);
             }
 
             if (ColonyOSMod.Settings.ShowProductionWidget || ColonyOSMod.Settings.ShowWorkforceWidget)
             {
-                float left = ColonyOSMod.Settings.ShowProductionWidget ? rect.width * 0.56f - 7f : 0f;
+                bool both = ColonyOSMod.Settings.ShowProductionWidget && ColonyOSMod.Settings.ShowWorkforceWidget;
+                Rect production, workforce;
+                if (both)
+                    y = SplitPanels(rect, y, 278f, 0.56f, out production, out workforce);
+                else
+                {
+                    production = new Rect(rect.x, y, rect.width, 278f);
+                    workforce = production;
+                    y += 292f;
+                }
                 if (ColonyOSMod.Settings.ShowProductionWidget)
                 {
-                    Rect production = new Rect(rect.x, y, ColonyOSMod.Settings.ShowWorkforceWidget ? left : rect.width, 278f);
                     Rect inner = UiDraw.Card(production, "Production activity", "Recorded bill iterations — not estimated item yields");
                     Charts.VerticalBars(inner, view.ProductionSeries, theme.Accent2);
                     if (Widgets.ButtonInvisible(production))
@@ -106,8 +122,6 @@ namespace ColonyOS.UI
                 }
                 if (ColonyOSMod.Settings.ShowWorkforceWidget)
                 {
-                    float x = ColonyOSMod.Settings.ShowProductionWidget ? rect.x + left + 14f : rect.x;
-                    Rect workforce = new Rect(x, y, rect.xMax - x, 278f);
                     Rect inner = UiDraw.Card(workforce, "Workforce allocation", "Colonists with each work type enabled");
                     List<NamedValue> work = new List<NamedValue>();
                     for (int i = 0; i < Math.Min(7, current.Workforce.Count); i++)
@@ -116,7 +130,6 @@ namespace ColonyOS.UI
                     if (Widgets.ButtonInvisible(workforce))
                         Navigate(Department.Population);
                 }
-                y += 292f;
             }
 
             if (ColonyOSMod.Settings.ShowMarketWidget)

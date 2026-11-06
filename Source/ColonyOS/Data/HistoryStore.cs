@@ -18,6 +18,7 @@ namespace ColonyOS.Data
         public List<TraderVisitRecord> TraderVisits = new List<TraderVisitRecord>();
 
         private List<Prediction> predictions = new List<Prediction>();
+        private readonly Dictionary<string, int> previouslyActiveTraders = new Dictionary<string, int>();
 
         public int Revision { get; private set; }
         public ColonySample Current => Samples.Count == 0 ? null : Samples[Samples.Count - 1];
@@ -38,6 +39,8 @@ namespace ColonyOS.Data
                 Samples.Sort((a, b) => a.Tick.CompareTo(b.Tick));
                 ProductionEvents.Sort((a, b) => a.Tick.CompareTo(b.Tick));
                 Transactions.Sort((a, b) => a.Tick.CompareTo(b.Tick));
+                for (int i = 0; i < Samples.Count - 1; i++)
+                    Samples[i].ReduceToSummary();
                 for (int i = 0; i < TraderVisits.Count; i++)
                     TraderVisits[i].Active = false;
                 Revision++;
@@ -49,9 +52,15 @@ namespace ColonyOS.Data
             if (sample == null)
                 return;
             if (Samples.Count > 0 && Samples[Samples.Count - 1].Tick == sample.Tick)
+            {
                 Samples[Samples.Count - 1] = sample;
+            }
             else
+            {
+                if (Samples.Count > 0)
+                    Samples[Samples.Count - 1].ReduceToSummary();
                 Samples.Add(sample);
+            }
             TrimFront(Samples, AbsoluteMaxSamples);
             Revision++;
         }
@@ -76,8 +85,14 @@ namespace ColonyOS.Data
 
         public void MarkAllTradersAbsent()
         {
+            previouslyActiveTraders.Clear();
             for (int i = 0; i < TraderVisits.Count; i++)
-                TraderVisits[i].Active = false;
+            {
+                TraderVisitRecord visit = TraderVisits[i];
+                if (visit.Active && !string.IsNullOrEmpty(visit.TraderKey))
+                    previouslyActiveTraders[visit.TraderKey] = i;
+                visit.Active = false;
+            }
         }
 
         public void RecordTraderVisit(TraderVisitRecord observed)
@@ -86,13 +101,22 @@ namespace ColonyOS.Data
                 return;
 
             TraderVisitRecord existing = null;
-            for (int i = TraderVisits.Count - 1; i >= 0; i--)
+            if (previouslyActiveTraders.TryGetValue(observed.TraderKey, out int previousIndex) && previousIndex >= 0 && previousIndex < TraderVisits.Count)
             {
-                TraderVisitRecord candidate = TraderVisits[i];
-                if (candidate.TraderKey == observed.TraderKey && candidate.Active)
+                existing = TraderVisits[previousIndex];
+                previouslyActiveTraders.Remove(observed.TraderKey);
+            }
+            else
+            {
+                // Event-driven observations can arrive between scheduled collection batches.
+                for (int i = TraderVisits.Count - 1; i >= 0; i--)
                 {
-                    existing = candidate;
-                    break;
+                    TraderVisitRecord candidate = TraderVisits[i];
+                    if (candidate.TraderKey == observed.TraderKey && candidate.Active)
+                    {
+                        existing = candidate;
+                        break;
+                    }
                 }
             }
 
@@ -106,6 +130,7 @@ namespace ColonyOS.Data
                 existing.Active = true;
                 existing.PurchasingCapacity = observed.PurchasingCapacity;
                 existing.EligibleGoods = observed.EligibleGoods;
+                existing.IneligibleGoods = observed.IneligibleGoods;
                 existing.MapId = observed.MapId;
                 existing.MapLabel = observed.MapLabel;
             }

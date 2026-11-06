@@ -454,6 +454,24 @@ namespace ColonyOS.Data
                     BaseMarketValue = value.Count <= 0 ? 0f : value.MarketValue / value.Count
                 });
             }
+            if (map != null)
+            {
+                foreach (KeyValuePair<ThingDef, int> pair in map.resourceCounter.AllCountedAmounts)
+                {
+                    if (pair.Key == null || pair.Value <= 0 || goods.ContainsKey(pair.Key.defName))
+                        continue;
+                    visit.IneligibleGoods.Add(new TradeEligibilityRecord
+                    {
+                        DefName = pair.Key.defName,
+                        Label = pair.Key.label,
+                        AvailableCount = pair.Value,
+                        BaseMarketValue = pair.Key.BaseMarketValue
+                    });
+                }
+                visit.IneligibleGoods.Sort((a, b) => b.AvailableCount.CompareTo(a.AvailableCount));
+                if (visit.IneligibleGoods.Count > 100)
+                    visit.IneligibleGoods.RemoveRange(100, visit.IneligibleGoods.Count - 100);
+            }
             visit.EligibleGoods.Sort((a, b) => b.AvailableCount.CompareTo(a.AvailableCount));
             if (visit.EligibleGoods.Count > 100)
                 visit.EligibleGoods.RemoveRange(100, visit.EligibleGoods.Count - 100);

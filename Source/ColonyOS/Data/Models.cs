@@ -204,6 +204,18 @@ namespace ColonyOS.Data
         public float GridBalanceAfterBatteryLosses => NetPower - BatterySelfDischarge;
         public float BatteryPct => BatteryCapacity <= 0f ? 0f : BatteryCharge / BatteryCapacity;
         public float StorageUtilization => StorageCellCount <= 0 ? 0f : 1f - (float)StorageFreeSlotEstimate / StorageCellCount;
+
+        /// <summary>Older history needs scalar measurements, not another copy of the whole colony.</summary>
+        public void ReduceToSummary()
+        {
+            PowerDevices.Clear();
+            PowerNetworks.Clear();
+            Resources.Clear();
+            StorageZones.Clear();
+            Workbenches.Clear();
+            Skills.Clear();
+            Workforce.Clear();
+        }
     }
 
     public sealed partial class ProductionEventRecord
@@ -238,6 +250,7 @@ namespace ColonyOS.Data
         public float PurchasingCapacity;
         public bool Active;
         public List<TradeEligibilityRecord> EligibleGoods = new List<TradeEligibilityRecord>();
+        public List<TradeEligibilityRecord> IneligibleGoods = new List<TradeEligibilityRecord>();
     }
 
     public sealed partial class TradeTransactionRecord

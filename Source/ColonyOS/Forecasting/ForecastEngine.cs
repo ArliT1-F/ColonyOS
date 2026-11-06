@@ -137,6 +137,33 @@ namespace ColonyOS.Forecasting
                     SupportingEvidence = Evidence("Observations are historical; the current grid is balanced.")
                 });
             }
+
+            if (balance >= 0f && current.PowerGeneration > current.PowerConsumption && current.PowerConsumption > 0f)
+            {
+                List<MetricPoint> consumption = Series(samples, nowTick - options.RetentionDays * TicksPerDay, x => x.PowerConsumption);
+                ForecastLine capacity = TrendAnalyzer.ProjectToThreshold(consumption, current.PowerGeneration, false);
+                int ticks = capacity.Available ? (int)(capacity.TargetAtTick - nowTick) : -1;
+                if (capacity.Available && ticks >= 0 && ticks <= options.HorizonHours * 2500)
+                {
+                    result.Add(new Prediction
+                    {
+                        Id = "power.capacity-approach",
+                        Title = "Consumption trend may reach generation capacity in " + FormatDuration(ticks),
+                        Department = Department.Power,
+                        Severity = ticks <= 24 * 2500 ? PredictionSeverity.Moderate : PredictionSeverity.Low,
+                        Evidence = EvidenceKind.Estimated,
+                        TimeframeTicks = ticks,
+                        Confidence = capacity.Confidence,
+                        Explanation = "A measured rise in electricity consumption reaches the current generation level within the forecast horizon if both trends persist.",
+                        SuggestedAction = "Review growing loads and offline generation capacity before the grid reaches a deficit.",
+                        SupportingEvidence = Evidence(
+                            "Generation: " + current.PowerGeneration.ToString("0") + " W",
+                            "Consumption: " + current.PowerConsumption.ToString("0") + " W",
+                            "Consumption trend: +" + capacity.SlopePerDay.ToString("0.0") + " W/day",
+                            capacity.Reason)
+                    });
+                }
+            }
         }
 
         private static void AddFoodForecast(List<Prediction> result, ColonySample current, IReadOnlyList<ColonySample> samples, ForecastOptions options, int nowTick)

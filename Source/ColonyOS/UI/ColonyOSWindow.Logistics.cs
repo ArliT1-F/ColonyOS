@@ -22,25 +22,25 @@ namespace ColonyOS.UI
             Charts.Kpi(UiDraw.GridCell(rect, columns, 3, 122f), "Human-edible nutrition", UiFormat.Compact(current.FoodNutrition), UiFormat.SignedPercent(PercentChange(view.GetSeries(SampleMetric.FoodNutrition))), "Counted food only", current.FoodNutrition <= 0f ? theme.Danger : theme.Good, Department.Logistics, view.GetSeries(SampleMetric.FoodNutrition), null);
             y += Mathf.CeilToInt(4f / columns) * 134f + 8f;
 
-            Rect food = new Rect(rect.x, y, rect.width * 0.62f - 7f, 282f);
+            y = SplitPanels(rect, y, 282f, 0.62f, out Rect food, out Rect pressure);
             Rect foodInner = UiDraw.Card(food, "Food reserve trajectory", "Historical projection is generated only from a significant measured trend");
-            Charts.LineChart(foodInner, OneSeries(view, SampleMetric.FoodNutrition, "Counted nutrition", theme.Good));
-            Rect pressure = new Rect(food.xMax + 14f, y, rect.xMax - food.xMax - 14f, 282f);
+            Charts.LineChart(foodInner, ProjectionSeries(view, SampleMetric.FoodNutrition, view.FoodProjection, 0f, "Counted nutrition", theme.Good));
             Rect pressureInner = UiDraw.Card(pressure, "Storage capacity pressure", "Cell utilization — not a universal item-capacity claim");
             UiDraw.Label(new Rect(pressureInner.x, pressureInner.y + 10f, pressureInner.width, 48f), current.StorageUtilization.ToString("P0"), theme.Text, GameFont.Medium, TextAnchor.MiddleCenter, true, false);
             UiDraw.Progress(new Rect(pressureInner.x + 8f, pressureInner.y + 68f, pressureInner.width - 16f, 15f), current.StorageUtilization, current.StorageUtilization >= 0.9f ? theme.Warning : theme.Accent);
             DrawStatRow(new Rect(pressureInner.x, pressureInner.y + 102f, pressureInner.width, 27f), "Estimated occupied", (current.StorageCellCount - current.StorageFreeSlotEstimate).ToString(), theme.Text);
             DrawStatRow(new Rect(pressureInner.x, pressureInner.y + 130f, pressureInner.width, 27f), "Estimated free", current.StorageFreeSlotEstimate.ToString(), theme.Text);
             DrawStatRow(new Rect(pressureInner.x, pressureInner.y + 158f, pressureInner.width, 27f), "Zones tracked", current.StorageZones.Count.ToString(), theme.Muted);
-            y += 296f;
+            if (view.StorageProjection.Available && view.StorageProjection.TargetAtTick > current.Tick)
+                UiDraw.Label(new Rect(pressureInner.x, pressureInner.y + 190f, pressureInner.width, 32f), "Estimated full in " + UiFormat.Duration((int)(view.StorageProjection.TargetAtTick - current.Tick)) + "  •  R² " + view.StorageProjection.RSquared.ToString("0.00"), theme.Purple, GameFont.Tiny, TextAnchor.MiddleCenter, false, false);
+            else
+                UiDraw.Label(new Rect(pressureInner.x, pressureInner.y + 190f, pressureInner.width, 32f), "No supported fill trend in this range", theme.Faint, GameFont.Tiny, TextAnchor.MiddleCenter, false, false);
 
-            Rect counts = new Rect(rect.x, y, rect.width * 0.45f - 7f, 292f);
+            y = SplitPanels(rect, y, 292f, 0.45f, out Rect counts, out Rect distribution);
             Rect countsInner = UiDraw.Card(counts, "Resource availability", "Largest counted stacks by quantity");
-            Charts.RankingBars(countsInner, ResourceCounts(current), "No counted resources", "Resources inside eligible storage will appear here.");
-            Rect distribution = new Rect(counts.xMax + 14f, y, rect.xMax - counts.xMax - 14f, 292f);
+            Charts.RankingBars(countsInner, view.ResourceCountRanking, "No counted resources", "Resources inside eligible storage will appear here.");
             Rect distributionInner = UiDraw.Card(distribution, "Resource value distribution", "Base market value × quantity; not an offer price");
-            Charts.Donut(distributionInner, ResourceValues(current, 6), "base value");
-            y += 306f;
+            Charts.Donut(distributionInner, view.ResourceValueRanking, "base value");
 
             UiDraw.Label(new Rect(rect.x, y, rect.width, 25f), "Stockpile pressure heatmap", theme.Text, GameFont.Small, TextAnchor.UpperLeft, true, false);
             y += 32f;

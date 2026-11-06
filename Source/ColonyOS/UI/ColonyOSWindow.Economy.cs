@@ -22,29 +22,25 @@ namespace ColonyOS.UI
             Charts.Kpi(UiDraw.GridCell(rect, columns, 3, 122f), "Purchase spending", UiFormat.Compact(view.PurchasesTotal), "Selected time range", "Actual transaction value", theme.Warning, Department.Economy, null, null);
             y += Mathf.CeilToInt(4f / columns) * 134f + 8f;
 
-            Rect history = new Rect(rect.x, y, rect.width * 0.64f - 7f, 282f);
+            y = SplitPanels(rect, y, 282f, 0.64f, out Rect history, out Rect composition);
             Rect historyInner = UiDraw.Card(history, "Colony wealth history", "Measured total wealth, including items, buildings, floors and pawns");
             Charts.LineChart(historyInner, OneSeries(view, SampleMetric.Wealth, "Total wealth", theme.Accent2), " silver", false);
-            Rect composition = new Rect(history.xMax + 14f, y, rect.xMax - history.xMax - 14f, 282f);
             Rect compositionInner = UiDraw.Card(composition, "Wealth composition", "Current WealthWatcher components");
             Charts.Donut(compositionInner, WealthComposition(current), "total wealth");
-            y += 296f;
 
             Rect trade = new Rect(rect.x, y, rect.width, 236f);
             Rect tradeInner = UiDraw.Card(trade, "Trade flow comparison", "Executed transaction prices — never substituted with market value");
             DrawTradeComparison(tradeInner, view);
             y += 250f;
 
-            Rect values = new Rect(rect.x, y, rect.width * 0.46f - 7f, 266f);
+            y = SplitPanels(rect, y, 266f, 0.46f, out Rect values, out Rect transactionCard);
             Rect valuesInner = UiDraw.Card(values, "Valuable counted resources", "Base market value × quantity; not merchant offers");
-            Charts.RankingBars(valuesInner, ResourceValues(current), "No valued resources", "Counted resources with positive base market value will appear here.");
-            Rect transactionCard = new Rect(values.xMax + 14f, y, rect.xMax - values.xMax - 14f, 266f);
+            Charts.RankingBars(valuesInner, view.ResourceValueRanking, "No valued resources", "Counted resources with positive base market value will appear here.");
             Rect transactionInner = UiDraw.Card(transactionCard, "Economic evidence", "How to interpret values on this page");
             UiDraw.Label(new Rect(transactionInner.x, transactionInner.y + 5f, transactionInner.width, 54f), "Market value is the game's item valuation. Transaction totals use the actual unit price captured immediately before a successful trade resets. Demand estimates are kept in Regional Market Intelligence.", theme.Muted, GameFont.Tiny);
             DrawStatRow(new Rect(transactionInner.x, transactionInner.y + 78f, transactionInner.width, 28f), "Buildings & floors", UiFormat.Money(current.WealthBuildings), theme.Text);
             DrawStatRow(new Rect(transactionInner.x, transactionInner.y + 108f, transactionInner.width, 28f), "Pawn wealth", UiFormat.Money(current.WealthPawns), theme.Text);
             DrawStatRow(new Rect(transactionInner.x, transactionInner.y + 138f, transactionInner.width, 28f), "Net trade flow", (view.SalesTotal - view.PurchasesTotal >= 0f ? "+" : "") + UiFormat.Money(view.SalesTotal - view.PurchasesTotal), view.SalesTotal >= view.PurchasesTotal ? theme.Good : theme.Warning);
-            y += 280f;
 
             Rect transactions = new Rect(rect.x, y, rect.width, 420f);
             Rect transactionsInner = UiDraw.Card(transactions, "Transaction history", "Newest executed trades in the selected range");
