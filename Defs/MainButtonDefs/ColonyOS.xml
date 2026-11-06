@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <MainButtonDef>
+    <defName>ColonyOS</defName>
+    <label>ColonyOS</label>
+    <description>Open the colony intelligence and management dashboard.</description>
+    <tabWindowClass>ColonyOS.UI.ColonyOSWindow</tabWindowClass>
+    <order>70</order>
+    <validWithoutMap>false</validWithoutMap>
+    <closesWorldView>true</closesWorldView>
+  </MainButtonDef>
+</Defs>

@@ -1,0 +1,27 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+Source/bin/
+Source/obj/
+Tests/bin/
+Tests/obj/
+1.6/Assemblies/*.dll
+1.6/Assemblies/*.pdb
+1.7/Assemblies/*.dll
+1.7/Assemblies/*.pdb
+*.user
+*.suo
+.vs/
+
+# Local game installation and logs
+RimWorld*/
+*.log
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Test artifacts
+TestResults/

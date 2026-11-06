@@ -1,0 +1,31 @@
+name: Build and verify
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Restore RimWorld reference assemblies
+        run: dotnet restore Source/ColonyOS.csproj
+      - name: Build RimWorld 1.6 and 1.7
+        run: dotnet build Source/ColonyOS.csproj -c Release --no-restore
+      - name: Run analytical tests
+        run: dotnet run --project Tests/ColonyOS.Analytics.Tests.csproj -c Release
+      - name: Verify mod package
+        run: python3 scripts/verify_mod.py
+      - name: Upload compiled assemblies
+        uses: actions/upload-artifact@v4
+        with:
+          name: ColonyOS-${{ github.sha }}
+          path: |
+            1.6/Assemblies/ColonyOS.dll
+            1.7/Assemblies/ColonyOS.dll
+          if-no-files-found: error

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <ColonyOS_SettingsCategory>ColonyOS</ColonyOS_SettingsCategory>
+  <ColonyOS_Tagline>Your colony. Your data. Your decisions.</ColonyOS_Tagline>
+  <ColonyOS_DataCollection>Data collection</ColonyOS_DataCollection>
+  <ColonyOS_CollectionInterval>Snapshot interval (ticks)</ColonyOS_CollectionInterval>
+  <ColonyOS_ForecastInterval>Forecast interval (ticks)</ColonyOS_ForecastInterval>
+  <ColonyOS_RetentionDays>History retention (in-game days)</ColonyOS_RetentionDays>
+  <ColonyOS_Appearance>Appearance</ColonyOS_Appearance>
+  <ColonyOS_Theme>Theme</ColonyOS_Theme>
+  <ColonyOS_Animations>Subtle interface animations</ColonyOS_Animations>
+  <ColonyOS_Notifications>Notify for critical predictions</ColonyOS_Notifications>
+  <ColonyOS_Reset>Reset defaults</ColonyOS_Reset>
+  <ColonyOS_Refresh>Refresh snapshot</ColonyOS_Refresh>
+</LanguageData>
