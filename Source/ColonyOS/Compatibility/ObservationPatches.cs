@@ -129,7 +129,7 @@ namespace ColonyOS.Compatibility
             if (trader is Pawn pawn)
                 return "pawn:" + pawn.thingIDNumber;
             if (trader is TradeShip ship)
-                return "ship:" + ship.loadID;
+                return "ship:" + ((ILoadReferenceable)ship).GetUniqueLoadID();
             if (trader is ILoadReferenceable referenceable)
                 return "trader:" + referenceable.GetUniqueLoadID();
             return "trader:" + trader.TraderName + ":" + trader.TraderKind?.defName;

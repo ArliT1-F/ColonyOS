@@ -17,7 +17,7 @@ namespace ColonyOS.Core
         public DashboardTheme Theme = DashboardTheme.DarkIndustrial;
         public int AccentPalette;
         public bool Animations = true;
-        bool showChartGrid = true;
+        public bool ShowChartGrid = true;
         public bool CriticalNotifications = true;
         public float BatteryWarningPct = 0.2f;
         public float StorageWarningPct = 0.9f;
@@ -29,12 +29,6 @@ namespace ColonyOS.Core
         public bool ShowWorkforceWidget = true;
         public bool ShowFoodWidget = true;
 
-        public bool ShowChartGrid
-        {
-            get => showChartGrid;
-            set => showChartGrid = value;
-        }
-
         public override void ExposeData()
         {
             Scribe_Values.Look(ref CollectionIntervalTicks, "collectionIntervalTicks", 2500);
@@ -43,7 +37,7 @@ namespace ColonyOS.Core
             Scribe_Values.Look(ref Theme, "theme", DashboardTheme.DarkIndustrial);
             Scribe_Values.Look(ref AccentPalette, "accentPalette", 0);
             Scribe_Values.Look(ref Animations, "animations", true);
-            Scribe_Values.Look(ref showChartGrid, "showChartGrid", true);
+            Scribe_Values.Look(ref ShowChartGrid, "showChartGrid", true);
             Scribe_Values.Look(ref CriticalNotifications, "criticalNotifications", true);
             Scribe_Values.Look(ref BatteryWarningPct, "batteryWarningPct", 0.2f);
             Scribe_Values.Look(ref StorageWarningPct, "storageWarningPct", 0.9f);

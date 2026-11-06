@@ -273,7 +273,7 @@ namespace ColonyOS.UI
                 tooltip += series[s].Label + ": " + points[i].Value.ToString("0.##") + unit;
             }
             float x = plot.x + plot.width * index / Mathf.Max(1, first.Points.Count - 1);
-            Widgets.DrawLineVertical(x, plot.y, plot.height, ColonyTheme.Alpha(ColonyTheme.Current.Muted, 0.45f));
+            UiDraw.Rounded(new Rect(x, plot.y, 1f, plot.height), ColonyTheme.Alpha(ColonyTheme.Current.Muted, 0.45f));
             Widgets.MouseAttachedLabel(tooltip, 12f, -12f);
         }
 

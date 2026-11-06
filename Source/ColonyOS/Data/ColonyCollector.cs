@@ -398,7 +398,7 @@ namespace ColonyOS.Data
                 for (int s = 0; s < ships.Count; s++)
                 {
                     if (ships[s] is TradeShip ship && ship.CanTradeNow)
-                        RecordTrader(history, ship, negotiator, map, tick, "ship:" + ship.loadID);
+                        RecordTrader(history, ship, negotiator, map, tick, "ship:" + ((ILoadReferenceable)ship).GetUniqueLoadID());
                 }
             }
         }

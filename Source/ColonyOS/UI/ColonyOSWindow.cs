@@ -87,7 +87,7 @@ namespace ColonyOS.UI
             GUI.color = theme.Sidebar;
             GUI.DrawTexture(rect, BaseContent.WhiteTex);
             GUI.color = Color.white;
-            Widgets.DrawLineVertical(rect.xMax - 1f, rect.y, rect.height, theme.Border);
+            UiDraw.Rounded(new Rect(rect.xMax - 1f, rect.y, 1f, rect.height), theme.Border);
 
             UiDraw.Rounded(new Rect(rect.x + 18f, rect.y + 22f, 38f, 38f), theme.Accent);
             UiDraw.Label(new Rect(rect.x + 18f, rect.y + 22f, 38f, 38f), "C", theme.Window, GameFont.Medium, TextAnchor.MiddleCenter, true, false);
